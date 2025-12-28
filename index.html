@@ -1,0 +1,3096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIT Council | Professional Meeting Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- For charts in attendance/dashboard -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script> <!-- For real-time notifications -->
+    <style>
+        /* Your original CSS remains intact - adding enhancements below */
+        /* === CSS RESET & VARIABLES === */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --danger: #ef233c;
+            --warning: #ff9e00;
+            --info: #4895ef;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --shadow-xl: 0 16px 48px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --gradient-primary: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+            --gradient-success: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+            --gradient-warning: linear-gradient(135deg, #ff9e00 0%, #ff5400 100%);
+            --gradient-danger: linear-gradient(135deg, #ef233c 0%, #d90429 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%); /* Default */
+            color: var(--dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Dynamic Background - Will be updated via JS */
+        body.morning {
+            background: linear-gradient(135deg, #ffeaa7 0%, #f6d365 100%);
+        }
+
+        body.afternoon {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+
+        body.evening {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body.night {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        body.dark-mode {
+            --dark: #f8f9fa;
+            --light: #1a1a2e;
+            --gray-light: #2c2c3e;
+            --gray: #a0a0b0;
+            background: var(--dark) !important; /* Override dynamic for dark mode */
+        }
+
+        /* === CUSTOM SCROLLBAR === */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+            transition: var(--transition);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* === LOADING OVERLAY === */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: var(--transition);
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--gray-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* === AUTHENTICATION SECTION === */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 2px, transparent 2px),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px, 30px 30px;
+            animation: float 40s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50px, -50px); }
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s ease;
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-logo-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .auth-logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .auth-logo p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            background: var(--gray-light);
+            border-radius: var(--radius-sm);
+            padding: 5px;
+            margin-bottom: 30px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            transition: var(--transition);
+            color: var(--gray);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 45px;
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            animation: bounce 2s infinite; /* Added animation to buttons */
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--gray-light);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            background: var(--light);
+        }
+
+        .btn-google {
+            background: white;
+            color: #333;
+            border: 2px solid var(--gray-light);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-google:hover {
+            border-color: var(--primary);
+            background: var(--light);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-light);
+        }
+
+        .divider span {
+            padding: 0 15px;
+        }
+
+        /* === MAIN APPLICATION === */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        /* === HEADER === */
+        .header {
+            height: var(--header-height);
+            background: white;
+            box-shadow: var(--shadow-md);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            transition: var(--transition);
+        }
+
+        .header.scrolled {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--dark);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            display: none;
+            transition: var(--transition);
+        }
+
+        .menu-toggle:hover {
+            background: var(--gray-light);
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-title h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-action-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .header-action-btn:hover {
+            background: var(--gray-light);
+            color: var(--primary);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .user-profile:hover {
+            background: var(--gray-light);
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .user-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+            box-shadow: var(--shadow-md);
+            padding: 25px 0;
+            overflow-y: auto;
+            transition: var(--transition);
+            z-index: 999;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        .nav-group {
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--gray);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--primary);
+            transform: scaleY(0);
+            transition: var(--transition);
+        }
+
+        .nav-item:hover {
+            background: var(--gray-light);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(67, 97, 238, 0.1) 0%, rgba(114, 9, 183, 0.05) 100%);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            transform: scaleY(1);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            margin-top: var(--header-height);
+            min-height: calc(100vh - var(--header-height));
+            transition: var(--transition);
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .page-title-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .page-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .page-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .page-subtitle {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .save-btn {
+            background: var(--gradient-success);
+            color: white;
+        }
+
+        /* === DASHBOARD === */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--gray-light);
+            animation: pulse 2s infinite; /* Added animation */
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient-primary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon.primary { background: var(--gradient-primary); }
+        .stat-icon.success { background: var(--gradient-success); }
+        .stat-icon.warning { background: var(--gradient-warning); }
+        .stat-icon.danger { background: var(--gradient-danger); }
+
+        .stat-menu-btn {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: var(--transition);
+        }
+
+        .stat-menu-btn:hover {
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 5px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        .stat-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--gray-light);
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        /* === MAN OF THE WEEK === */
+        .man-of-week {
+            background: linear-gradient(135deg, #fff9db 0%, #ffeaa7 100%);
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #ffd43b;
+            box-shadow: var(--shadow-md);
+            animation: bounce 1.5s infinite; /* Added animation */
+        }
+
+        .man-of-week::before {
+            content: '🏆';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 40px;
+            opacity: 0.3;
+        }
+
+        .man-content {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .man-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: 700;
+            box-shadow: var(--shadow-lg);
+            border: 4px solid white;
+        }
+
+        .man-info {
+            flex: 1;
+        }
+
+        .man-badge {
+            background: #ffd43b;
+            color: #7a5800;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .man-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #7a5800;
+            margin-bottom: 5px;
+        }
+
+        .man-role {
+            color: #b78a00;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .man-reason {
+            color: #926c00;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .man-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .man-stat {
+            text-align: center;
+        }
+
+        .man-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #7a5800;
+        }
+
+        .man-stat-label {
+            font-size: 12px;
+            color: #b78a00;
+        }
+
+        /* === CONTENT CARDS === */
+        .content-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            border: 1px solid var(--gray-light);
+            animation: slideInRight 0.8s ease; /* Added animation */
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gray-light);
+            border: none;
+            color: var(--dark);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* === MEETING ITEMS === */
+        .meeting-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .meeting-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-radius: var(--radius-sm);
+            background: var(--gray-light);
+            border: 1px solid var(--gray-light);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .meeting-item:hover {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .meeting-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-sm);
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .meeting-details {
+            flex: 1;
+        }
+
+        .meeting-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .meeting-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .meeting-type {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .type-regular {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+
+        .type-random {
+            background: rgba(255, 158, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .type-special {
+            background: rgba(114, 9, 183, 0.1);
+            color: var(--secondary);
+        }
+
+        .meeting-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* === TABLES === */
+        .table-container {
+            background: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 30px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: var(--gray-light);
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            border-bottom: 2px solid var(--gray-light);
+        }
+
+        .table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .table tr:hover {
+            background: rgba(67, 97, 238, 0.05);
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* === BADGES === */
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(255, 158, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 35, 60, 0.1);
+            color: var(--danger);
+        }
+
+        .badge-info {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+
+        /* === FORM SECTIONS === */
+        .form-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--gray-light);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .section-subtitle {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        /* === AGENDA BUILDER === */
+        .agenda-builder {
+            background: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .agenda-item {
+            background: var(--gray-light);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .agenda-item:hover {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .agenda-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .agenda-number {
+            width: 35px;
+            height: 35px;
+            background: var(--gradient-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .agenda-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* === PDF PREVIEW === */
+        .pdf-preview-container {
+            background: white;
+            border-radius: var(--radius);
+            padding: 40px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 30px;
+            border: 1px solid var(--gray-light);
+        }
+
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid var(--gray-light);
+        }
+
+        .pdf-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .pdf-subtitle {
+            color: var(--gray);
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .pdf-meta {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .pdf-content {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.8;
+        }
+
+        .pdf-section {
+            margin-bottom: 35px;
+            page-break-inside: avoid;
+        }
+
+        .pdf-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        /* === MODALS === */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(30px);
+            transition: var(--transition);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            background: var(--gray-light);
+        }
+
+        .modal-body {
+            margin-bottom: 25px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            padding-top: 20px;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        /* === TOAST NOTIFICATIONS === */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            z-index: 9999;
+        }
+
+        .toast {
+            background: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 350px;
+            transform: translateX(400px);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border-left: 5px solid var(--primary);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .toast-success .toast-icon { background: var(--success); }
+        .toast-error .toast-icon { background: var(--danger); }
+        .toast-warning .toast-icon { background: var(--warning); }
+        .toast-info .toast-icon { background: var(--info); }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 5px;
+            transition: var(--transition);
+        }
+
+        .toast-close:hover {
+            color: var(--danger);
+        }
+
+        /* === DROPDOWN MENUS === */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-xl);
+            min-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: var(--transition);
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: var(--dark);
+            transition: var(--transition);
+            cursor: pointer;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: var(--gray-light);
+            color: var(--primary);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* === RESPONSIVE DESIGN === */
+        @media (max-width: 1200px) {
+            .content-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .menu-toggle {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 20px;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .man-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .man-stats {
+                justify-content: center;
+            }
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .page-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .form-actions {
+                flex-direction: column;
+            }
+            .form-actions .btn {
+                width: 100%;
+            }
+            .modal {
+                width: 95%;
+                padding: 20px;
+            }
+            .toast {
+                min-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 30px 20px;
+            }
+            .header-title h1 {
+                font-size: 16px;
+            }
+            .stat-value {
+                font-size: 28px;
+            }
+            .card {
+                padding: 20px;
+            }
+            .meeting-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .meeting-actions {
+                align-self: flex-end;
+            }
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* New Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .bounce {
+            animation: bounce 1s infinite;
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        /* === PRINT STYLES === */
+        @media print {
+            .header,
+            .sidebar,
+            .page-actions,
+            .form-actions,
+            .modal-overlay,
+            .toast-container {
+                display: none !important;
+            }
+            .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .pdf-preview-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            .card,
+            .form-section {
+                box-shadow: none !important;
+                border: none !important;
+                break-inside: avoid;
+            }
+        }
+
+        /* === UTILITY CLASSES === */
+        .d-none { display: none !important; }
+        .d-flex { display: flex !important; }
+        .text-center { text-align: center !important; }
+        .text-right { text-align: right !important; }
+        .text-primary { color: var(--primary) !important; }
+        .text-success { color: var(--success) !important; }
+        .text-danger { color: var(--danger) !important; }
+        .text-warning { color: var(--warning) !important; }
+        .text-muted { color: var(--gray) !important; }
+        .bg-light { background: var(--light) !important; }
+        .bg-white { background: white !important; }
+        .shadow { box-shadow: var(--shadow-md) !important; }
+        .rounded { border-radius: var(--radius) !important; }
+        .mb-0 { margin-bottom: 0 !important; }
+        .mb-1 { margin-bottom: 10px !important; }
+        .mb-2 { margin-bottom: 20px !important; }
+        .mb-3 { margin-bottom: 30px !important; }
+        .mt-1 { margin-top: 10px !important; }
+        .mt-2 { margin-top: 20px !important; }
+        .mt-3 { margin-top: 30px !important; }
+        .p-1 { padding: 10px !important; }
+        .p-2 { padding: 20px !important; }
+        .p-3 { padding: 30px !important; }
+        .w-100 { width: 100% !important; }
+        .h-100 { height: 100% !important; }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="mt-2">Loading SIT Council Portal...</div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Authentication Section -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <h1>SIT Council Portal</h1>
+                <p>Professional Meeting Management System</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-form="login">Sign In</div>
+                <div class="auth-tab" data-form="register">Sign Up</div>
+                <div class="auth-tab" data-form="forgot">Forgot Password</div>
+            </div>
+            
+            <!-- Login Form -->
+            <form class="auth-form active" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="loginEmail" placeholder="you@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle" id="loginPasswordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-hint mt-1">
+                        <a href="#" class="toggle-password">Forgot password?</a>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                
+                <div class="divider">
+                    <span>or continue with</span>
+                </div>
+                
+                <button type="button" class="btn btn-google" id="googleSignIn">
+                    <i class="fab fa-google"></i> Sign in with Google
+                </button>
+                
+                <div class="text-center mt-3">
+                    <p class="text-muted">
+                        Demo: admin@sit.edu / password123
+                    </p>
+                </div>
+            </form>
+            
+            <!-- Register Form -->
+            <form class="auth-form" id="registerForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="registerFirstName" placeholder="John" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="registerLastName" placeholder="Doe" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="registerEmail" placeholder="you@example.com" required>
+                    <div class="form-hint">Use your SIT email address</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-control" id="registerPassword" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle" id="registerPasswordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-hint">Minimum 8 characters with letters and numbers</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-control" id="registerConfirm" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle" id="registerConfirmToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Council Role</label>
+                        <select class="form-control" id="registerRole" required>
+                            <option value="">Select your role</option>
+                            <option value="President">President</option>
+                            <option value="Vice President">Vice President</option>
+                            <option value="Secretary">Secretary</option>
+                            <option value="Treasurer">Treasurer</option>
+                            <option value="PRO">Public Relations Officer</option>
+                            <option value="Coordinator">Club Coordinator</option>
+                            <option value="Member">Council Member</option>
+                            <option value="Guest">Guest/Invitee</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Student ID</label>
+                        <input type="text" class="form-control" id="registerStudentId" placeholder="SIT2023XXX">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="termsAgreement" required>
+                        <label class="form-check-label" for="termsAgreement">
+                            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+                
+                <div class="divider">
+                    <span>or</span>
+                </div>
+                
+                <button type="button" class="btn btn-google" id="googleRegister">
+                    <i class="fab fa-google"></i> Sign up with Google
+                </button>
+            </form>
+            
+            <!-- Forgot Password Form -->
+            <form class="auth-form" id="forgotForm">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="forgotEmail" placeholder="you@example.com" required>
+                    <div class="form-hint">We'll send password reset instructions to this email</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-key"></i> Reset Password
+                </button>
+                
+                <div class="text-center mt-3">
+                    <a href="#" class="toggle-password">Back to login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="app-container" id="appContainer">
+        <!-- Header -->
+        <header class="header" id="header">
+          // In fetch calls
+          <headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${app.token}` }
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="header-logo">
+                <div class="logo-icon">SC</div>
+                <div class="header-title">
+                    <h1>SIT Council Portal</h1>
+                    <p>Meeting Minutes & Management System</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button class="header-action-btn" id="searchBtn" title="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                
+                <button class="header-action-btn" id="notificationBtn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </button>
+                
+                <button class="header-action-btn" id="fullscreenBtn" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                
+                <button class="header-action-btn" id="darkModeToggle" title="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <div class="dropdown" id="userDropdown">
+                    <div class="user-profile" id="userProfile">
+                        <div class="user-avatar" id="userAvatar">TH</div>
+                        <div class="user-info">
+                            <h4 id="userName">Tahir Hasan</h4>
+                            <p id="userRole">Secretary</p>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    
+                    <div class="dropdown-menu" id="userMenu">
+                        <a href="#" class="dropdown-item" data-action="profile">
+                            <i class="fas fa-user"></i> My Profile
+                        </a>
+                        <a href="#" class="dropdown-item" data-action="settings">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                        <a href="#" class="dropdown-item" data-action="help">
+                            <i class="fas fa-question-circle"></i> Help & Support
+                        </a>
+                        <div class="dropdown-item" data-action="logout">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar (Added new nav items for attendance and files) -->
+        <nav class="sidebar" id="sidebar">
+            <div class="nav-group">
+                <div class="nav-label">Main</div>
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                    <span class="nav-badge">3</span>
+                </a>
+                <a href="#" class="nav-item" data-page="calendar">
+                    <i class="fas fa-calendar-alt"></i>
+                    Meeting Calendar
+                </a>
+                <a href="#" class="nav-item" data-page="minutes">
+                    <i class="fas fa-clipboard-list"></i>
+                    Meeting Minutes
+                    <span class="nav-badge">5</span>
+                </a>
+            </div>
+            
+            <div class="nav-group">
+                <div class="nav-label">Meetings</div>
+                <a href="#" class="nav-item" data-page="new-meeting">
+                    <i class="fas fa-plus-circle"></i>
+                    New Meeting
+                </a>
+                <a href="#" class="nav-item" data-page="agenda">
+                    <i class="fas fa-list-ol"></i>
+                    Agenda Builder
+                </a>
+                <a href="#" class="nav-item" data-page="attendees">
+                    <i class="fas fa-users"></i>
+                    Attendees
+                </a>
+                <a href="#" class="nav-item" data-page="archive">
+                    <i class="fas fa-archive"></i>
+                    Meeting Archive
+                </a>
+            </div>
+            
+            <div class="nav-group">
+                <div class="nav-label">Management</div>
+                <a href="#" class="nav-item" data-page="actions">
+                    <i class="fas fa-tasks"></i>
+                    Action Items
+                    <span class="nav-badge">12</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    Reports & Analytics
+                </a>
+                <a href="#" class="nav-item" data-page="performance">
+                    <i class="fas fa-trophy"></i>
+                    Performance
+                </a>
+                <a href="#" class="nav-item" data-page="leaderboard">
+                    <i class="fas fa-medal"></i>
+                    Leaderboard
+                </a>
+                <a href="#" class="nav-item" data-page="attendance">
+                    <i class="fas fa-check-square"></i>
+                    Attendance Dashboard
+                </a>
+                <a href="#" class="nav-item" data-page="files">
+                    <i class="fas fa-folder-open"></i>
+                    Files & Documents
+                </a>
+            </div>
+            
+            <div class="nav-group">
+                <div class="nav-label">System</div>
+                <a href="#" class="nav-item" data-page="members">
+                    <i class="fas fa-user-friends"></i>
+                    Council Members
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+                <a href="#" class="nav-item" data-page="templates">
+                    <i class="fas fa-file-alt"></i>
+                    Templates
+                </a>
+                <a href="#" class="nav-item" data-page="help">
+                    <i class="fas fa-question-circle"></i>
+                    Help & Support
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content (Added new pages for attendance, files, profile) -->
+        <main class="main-content" id="mainContent">
+            <!-- Dashboard (Added Council Tips & News and Chart) -->
+            <div class="page-content active" id="dashboardContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">Dashboard</h1>
+                            <p class="page-subtitle">
+                                Welcome back, <span id="greetingName" class="text-primary">Tahir</span>! 
+                                Here's your council overview for today.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-secondary" id="refreshDashboardBtn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn save-btn" id="saveDashboardBtn">
+                            <i class="fas fa-save"></i> Save Dashboard
+                        </button>
+                        <button class="btn btn-primary" id="quickMeetingBtn">
+                            <i class="fas fa-plus"></i> Quick Meeting
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Man of the Week -->
+                <div class="man-of-week slide-up">
+                    <div class="man-content">
+                        <div class="man-avatar" id="manAvatar">TH</div>
+                        <div class="man-info">
+                            <span class="man-badge">Man of the Week</span>
+                            <h2 class="man-name" id="manName">Tahir Hasan</h2>
+                            <p class="man-role" id="manRole">Secretary</p>
+                            <p class="man-reason" id="manReason">
+                                For outstanding leadership in organizing the annual cultural fest and managing 
+                                15+ meetings with 95% attendance rate this month.
+                            </p>
+                            <div class="man-stats">
+                                <div class="man-stat">
+                                    <div class="man-stat-value" id="manTasks">42</div>
+                                    <div class="man-stat-label">Tasks Completed</div>
+                                </div>
+                                <div class="man-stat">
+                                    <div class="man-stat-value" id="manMeetings">15</div>
+                                    <div class="man-stat-label">Meetings Attended</div>
+                                </div>
+                                <div class="man-stat">
+                                    <div class="man-stat-value" id="manPerformance">98%</div>
+                                    <div class="man-stat-label">Performance</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="dashboard-grid">
+                    <div class="stat-card fade-in">
+                        <div class="stat-header">
+                            <div class="stat-icon primary">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <button class="stat-menu-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="stat-value" id="meetingsCount">15</div>
+                        <div class="stat-label">Total Meetings This Month</div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i> 25% from last month
+                        </div>
+                        <div class="stat-footer">
+                            <span id="regularMeetings">12 Regular</span> • 
+                            <span id="randomMeetings">3 Random</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card fade-in">
+                        <div class="stat-header">
+                            <div class="stat-icon success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <button class="stat-menu-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="stat-value" id="tasksCount">127</div>
+                        <div class="stat-label">Completed Action Items</div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i> 18% progress
+                        </div>
+                        <div class="stat-footer">
+                            <span id="pendingTasks">24 Pending</span> • 
+                            <span id="overdueTasks">3 Overdue</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card fade-in">
+                        <div class="stat-header">
+                            <div class="stat-icon warning">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <button class="stat-menu-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="stat-value" id="pendingDecisions">7</div>
+                        <div class="stat-label">Pending Decisions</div>
+                        <div class="stat-trend trend-down">
+                            <i class="fas fa-arrow-down"></i> Needs attention
+                        </div>
+                        <div class="stat-footer">
+                            <span id="urgentDecisions">2 Urgent</span> • 
+                            <span id="normalDecisions">5 Normal</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card fade-in">
+                        <div class="stat-header">
+                            <div class="stat-icon danger">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <button class="stat-menu-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="stat-value" id="memberPerformance">92%</div>
+                        <div class="stat-label">Average Member Performance</div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i> 5% improvement
+                        </div>
+                        <div class="stat-footer">
+                            <span id="topPerformer">Tahir Hasan: 98%</span> • 
+                            <span id="lowestPerformer">John Doe: 85%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- New: Council Tips & News Section -->
+                <div class="card fade-in-up">
+                    <div class="card-header">
+                        <h2 class="card-title">Council Tips & News</h2>
+                        <button class="btn-icon" id="refreshTipsBtn" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div id="tipsList" class="p-2">
+                        <!-- Dynamically loaded tips -->
+                    </div>
+                </div>
+                
+                <!-- New: Analytics Chart in Dashboard -->
+                <div class="card fade-in-up">
+                    <div class="card-header">
+                        <h2 class="card-title">Meetings Analytics</h2>
+                    </div>
+                    <canvas id="meetingsChart" height="200"></canvas>
+                </div>
+                
+                <!-- Content Cards -->
+                <div class="content-cards">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Recent Meetings</h2>
+                            <div class="card-actions">
+                                <button class="btn-icon" id="refreshMeetingsBtn" title="Refresh">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <button class="btn-icon" id="viewAllMeetingsBtn" title="View All">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="meeting-list" id="recentMeetingsList">
+                            <!-- Meetings loaded dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Quick Actions</h2>
+                        </div>
+                        <div style="display: grid; gap: 15px;">
+                            <button class="btn btn-secondary" id="generateReportBtn">
+                                <i class="fas fa-file-pdf"></i> Generate Monthly Report
+                            </button>
+                            <button class="btn btn-secondary" id="sendRemindersBtn">
+                                <i class="fas fa-envelope"></i> Send Meeting Reminders
+                            </button>
+                            <button class="btn btn-secondary" id="viewAnalyticsBtn">
+                                <i class="fas fa-chart-line"></i> View Performance Analytics
+                            </button>
+                            <button class="btn btn-secondary" id="exportDataBtn">
+                                <i class="fas fa-download"></i> Export All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upcoming Meetings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Upcoming Meetings</h2>
+                        <div class="card-actions">
+                            <button class="btn btn-primary" id="addMeetingBtn">
+                                <i class="fas fa-plus"></i> Add Meeting
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Meeting Title</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="upcomingMeetingsTable">
+                                <!-- Upcoming meetings loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Leaderboard Preview -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Top Performers This Week</h2>
+                        <button class="btn btn-secondary" id="viewLeaderboardBtn">
+                            View Full Leaderboard
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Member</th>
+                                    <th>Role</th>
+                                    <th>Tasks Completed</th>
+                                    <th>Attendance</th>
+                                    <th>Performance Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboardPreview">
+                                <!-- Leaderboard loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New Meeting Content -->
+            <div class="page-content" id="newMeetingContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">Create New Meeting</h1>
+                            <p class="page-subtitle">
+                                Schedule a new meeting with detailed agenda and attendees
+                            </p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-secondary" id="saveDraftBtn">
+                            <i class="fas fa-save"></i> Save Draft
+                        </button>
+                        <button class="btn save-btn" id="saveMeetingBtn">
+                            <i class="fas fa-save"></i> Save Meeting
+                        </button>
+                        <button class="btn btn-primary" id="createMeetingBtn">
+                            <i class="fas fa-check"></i> Create & Schedule
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Meeting Details -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-title">Meeting Details</h2>
+                            <p class="section-subtitle">Basic information about the meeting</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Meeting Title *</label>
+                            <input type="text" class="form-control" id="meetingTitle" 
+                                   placeholder="Monthly Council Meeting - December 2023" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Meeting Type *</label>
+                            <select class="form-control" id="meetingType" required>
+                                <option value="regular">Regular Meeting</option>
+                                <option value="random">Random/Urgent Meeting</option>
+                                <option value="special">Special Session</option>
+                                <option value="committee">Committee Meeting</option>
+                                <option value="emergency">Emergency Meeting</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="meetingDate" 
+                                   min="${new Date().toISOString().split('T')[0]}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Start Time *</label>
+                            <input type="time" class="form-control" id="meetingStartTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Time *</label>
+                            <input type="time" class="form-control" id="meetingEndTime" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Location/Venue</label>
+                            <input type="text" class="form-control" id="meetingLocation" 
+                                   placeholder="Conference Room A, Admin Building">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Chairperson *</label>
+                            <select class="form-control" id="meetingChair" required>
+                                <option value="">Select Chairperson</option>
+                                <!-- Loaded dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Meeting Objective/Purpose *</label>
+                        <textarea class="form-control" id="meetingObjective" rows="3" 
+                                  placeholder="Brief description of meeting purpose and expected outcomes..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="meetingNotes" rows="2" 
+                                  placeholder="Any additional information or special requirements..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Agenda Builder -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-list-ol"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-title">Agenda Builder</h2>
+                            <p class="section-subtitle">Create detailed agenda items for the meeting</p>
+                        </div>
+                        <button class="btn btn-primary" id="addAgendaItemBtn">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    
+                    <div class="agenda-builder" id="agendaBuilder">
+                        <!-- Agenda items added dynamically -->
+                        <div class="text-center p-3 text-muted" id="emptyAgendaMessage">
+                            <i class="fas fa-list-ul fa-2x mb-2"></i>
+                            <p>No agenda items added yet. Click "Add Item" to start building your agenda.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attendees -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-title">Attendees</h2>
+                            <p class="section-subtitle">Select members who will attend this meeting</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Required Attendees *</label>
+                        <div class="attendee-selection" id="requiredAttendees">
+                            <!-- Attendee checkboxes loaded dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Optional Attendees</label>
+                        <div class="attendee-selection" id="optionalAttendees">
+                            <!-- Optional attendee checkboxes -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Guest Invitees (External)</label>
+                        <textarea class="form-control" id="guestInvitees" rows="2" 
+                                  placeholder="Enter guest names and emails (one per line)"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Meeting Documents (Enhanced with actual upload) -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-title">Documents & Attachments</h2>
+                            <p class="section-subtitle">Upload relevant documents for the meeting</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Upload Files</label>
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                            <p>Drag & drop files here or click to browse</p>
+                            <p class="text-muted">Max file size: 10MB each (PDF, DOC, IMG)</p>
+                            <input type="file" id="fileUpload" multiple class="d-none">
+                            <button class="btn btn-secondary mt-2" id="browseFilesBtn">
+                                <i class="fas fa-folder-open"></i> Browse Files
+                            </button>
+                        </div>
+                        <div class="uploaded-files mt-3" id="uploadedFiles">
+                            <!-- Uploaded files list (with download/delete) -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Meeting Archive -->
+            <div class="page-content" id="archiveContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-archive"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">Meeting Archive</h1>
+                            <p class="page-subtitle">Browse and manage past meetings and minutes</p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn save-btn" id="saveArchiveViewBtn">
+                            <i class="fas fa-save"></i> Save View
+                        </button>
+                        <button class="btn btn-primary" id="exportArchiveBtn">
+                            <i class="fas fa-download"></i> Export Archive
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Archive table loaded dynamically -->
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="archiveTable">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- PDF Generator -->
+            <div class="page-content" id="pdfContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">PDF Generator</h1>
+                            <p class="page-subtitle">Create professional meeting minutes in PDF format</p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn save-btn" id="savePdfTemplateBtn">
+                            <i class="fas fa-save"></i> Save Template
+                        </button>
+                        <button class="btn btn-secondary" id="previewPdfBtn">
+                            <i class="fas fa-eye"></i> Preview
+                        </button>
+                        <button class="btn btn-primary" id="generatePdfBtn">
+                            <i class="fas fa-file-download"></i> Generate PDF
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- PDF Preview Area -->
+                <div class="pdf-preview-container" id="pdfPreview">
+                    <div class="pdf-header">
+                        <h1 class="pdf-title">SIT STUDENT COUNCIL</h1>
+                        <p class="pdf-subtitle">OFFICIAL MEETING MINUTES</p>
+                        <div class="pdf-meta">
+                            <span>Document ID: SC-<span id="docId">2023-045</span></span>
+                            <span>Generated: <span id="docDate">December 1, 2023</span></span>
+                            <span>Confidential Level: <span id="docConfidential">Internal Use Only</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-content" id="pdfContentArea">
+                        <!-- PDF content generated dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leaderboard -->
+            <div class="page-content" id="leaderboardContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">Performance Leaderboard</h1>
+                            <p class="page-subtitle">Track and compare council member performance</p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn save-btn" id="saveLeaderboardBtn">
+                            <i class="fas fa-save"></i> Save Report
+                        </button>
+                        <button class="btn btn-primary" id="updateLeaderboardBtn">
+                            <i class="fas fa-sync-alt"></i> Update Scores
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Member</th>
+                                <th>Role</th>
+                                <th>Points</th>
+                                <th>Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardTable">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- New: Attendance Dashboard Page -->
+            <div class="page-content" id="attendanceContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-check-square"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">Attendance Dashboard</h1>
+                            <p class="page-subtitle">Track and manage attendance for meetings</p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="markAttendanceBtn">
+                            <i class="fas fa-check"></i> Mark Attendance
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Attendance Stats -->
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon success">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="attendanceRate">95%</div>
+                        <div class="stat-label">Average Attendance Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon warning">
+                                <i class="fas fa-user-times"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="absentCount">3</div>
+                        <div class="stat-label">Absences This Month</div>
+                    </div>
+                </div>
+                
+                <!-- Attendance Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Attendance History</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Meeting</th>
+                                    <th>Date</th>
+                                    <th>Your Status</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTable">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Attendance Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Attendance Trend</h2>
+                    </div>
+                    <canvas id="attendanceChart" height="200"></canvas>
+                </div>
+            </div>
+            
+            <!-- New: Files & Documents Page -->
+            <div class="page-content" id="filesContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">Files & Documents</h1>
+                            <p class="page-subtitle">Upload, view, and manage council files</p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="uploadFileBtn">
+                            <i class="fas fa-upload"></i> Upload File
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- File Upload Section -->
+                <div class="form-section">
+                    <div class="form-group">
+                        <label class="form-label">Select Meeting for Upload</label>
+                        <select class="form-control" id="fileMeetingSelect">
+                            <option value="">Select Meeting</option>
+                            <!-- Loaded dynamically -->
+                        </select>
+                    </div>
+                    <div class="file-upload-area" id="globalFileUploadArea">
+                        <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                        <p>Drag & drop or click to browse</p>
+                        <input type="file" id="globalFileUpload" multiple class="d-none">
+                        <button class="btn btn-secondary mt-2" id="globalBrowseFilesBtn">
+                            <i class="fas fa-folder-open"></i> Browse
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Files List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Uploaded Files</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Meeting</th>
+                                    <th>Uploaded By</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="filesTable">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New: User Profile Page -->
+            <div class="page-content" id="profileContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">My Profile</h1>
+                            <p class="page-subtitle">View and edit your profile information</p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn save-btn" id="saveProfileBtn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="profileFirstName">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="profileLastName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="profileEmail" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <input type="text" class="form-control" id="profileRole" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="profileNewPassword">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="profileConfirmPassword">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings -->
+            <div class="page-content" id="settingsContent">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div>
+                            <h1 class="page-title">System Settings</h1>
+                            <p class="page-subtitle">Configure your council portal preferences</p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn save-btn" id="saveSettingsBtn">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                        <button class="btn btn-secondary" id="backupDbBtn">
+                            <i class="fas fa-download"></i> Backup DB
+                        </button>
+                        <button class="btn btn-secondary" id="restoreDbBtn">
+                            <i class="fas fa-upload"></i> Restore DB
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Settings form loaded dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals (Added for attendance marking) -->
+    <div class="modal-overlay" id="agendaItemModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Agenda Item</h2>
+                <button class="modal-close" id="closeAgendaModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Agenda item form -->
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" class="form-control" id="agendaTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Presenter</label>
+                    <select class="form-control" id="agendaPresenter">
+                        <option value="">Select Presenter</option>
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Duration (minutes)</label>
+                    <input type="number" class="form-control" id="agendaDuration" min="5" value="30">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" id="agendaDescription" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="saveAgendaItemBtn">Save Item</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="notificationModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Notifications</h2>
+                <button class="modal-close" id="closeNotificationModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="notificationsList">
+                <!-- Notifications loaded dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="attendanceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Mark Attendance</h2>
+                <button class="modal-close" id="closeAttendanceModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Meeting</label>
+                    <select class="form-control" id="attendanceMeetingSelect">
+                        <option value="">Select Meeting</option>
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+                <div id="attendanceUsersList">
+                    <!-- User list with checkboxes for present/absent -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="saveAttendanceBtn">Save Attendance</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript (Enhanced with API calls, real-time, charts, etc.) -->
+    <script>
+        // API Base URL (Change to your local IP if needed)
+        const API_BASE = 'http://localhost:3000';
+        const socket = io(API_BASE); // Real-time socket
+
+        // Dynamic Background
+        function updateDynamicBackground() {
+            const hour = new Date().getHours();
+            let className = '';
+            if (hour >= 6 && hour < 12) className = 'morning';
+            else if (hour >= 12 && hour < 18) className = 'afternoon';
+            else if (hour >= 18 && hour < 22) className = 'evening';
+            else className = 'night';
+            document.body.className = className + (localStorage.getItem('darkMode') === 'true' ? ' dark-mode' : '');
+        }
+
+        // Dark Mode Toggle
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            localStorage.setItem('darkMode', !isDark);
+            updateDynamicBackground();
+        });
+
+        // Update background on load and every hour
+        updateDynamicBackground();
+        setInterval(updateDynamicBackground, 3600000);
+
+        // Tips Array (Interesting Info)
+        const tips = [
+            "Did you know? Effective meetings boost productivity by 25%!",
+            "Tip: Always set clear objectives for meetings to stay on track.",
+            "News: SIT Council won the Best Student Org award last year!",
+            "Tip: Use attendance tracking to improve member engagement.",
+            "Did you know? Uploading files early helps everyone prepare better."
+        ];
+
+        // Show random tip
+        function showRandomTip() {
+            const tipList = document.getElementById('tipsList');
+            if (tipList) tipList.innerHTML = tips[Math.floor(Math.random() * tips.length)];
+        }
+        document.getElementById('refreshTipsBtn')?.addEventListener('click', showRandomTip);
+
+        // ==================== APPLICATION STATE & MANAGER ====================
+        class CouncilApp {
+            constructor() {
+                this.currentUser = null;
+                this.currentPage = 'dashboard';
+                this.currentMeeting = null;
+                this.unsavedChanges = false;
+                this.notifications = [];
+                this.token = localStorage.getItem('token'); // JWT token
+                
+                this.init();
+            }
+            
+            init() {
+                this.loadCurrentUser();
+                this.setupAutoSave();
+                this.loadNotifications();
+                socket.on('notification', (data) => this.addNotification(data));
+                
+                // Check for unsaved changes
+                window.addEventListener('beforeunload', (e) => {
+                    if (this.unsavedChanges) {
+                        e.preventDefault();
+                        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                    }
+                });
+            }
+            
+            async loadCurrentUser() {
+                const savedUser = localStorage.getItem('sit_council_current_user');
+                if (savedUser) {
+                    this.currentUser = JSON.parse(savedUser);
+                }
+                if (this.token) {
+                    try {
+                        const res = await fetch(`${API_BASE}/api/users/me`, {
+                            headers: { 'Authorization': `Bearer ${this.token}` }
+                        });
+                        if (res.ok) this.currentUser = await res.json();
+                    } catch (e) {
+                        console.error('Error loading user', e);
+                    }
+                }
+            }
+            
+            saveCurrentUser() {
+                if (this.currentUser) {
+                    localStorage.setItem('sit_council_current_user', JSON.stringify(this.currentUser));
+                }
+            }
+            
+            setupAutoSave() {
+                setInterval(() => {
+                    if (this.unsavedChanges) {
+                        // Save to backend
+                        this.unsavedChanges = false;
+                    }
+                }, 30000);
+            }
+            
+            addNotification(notification) {
+                this.notifications.push(notification);
+                // Update UI
+                ui.showToast(notification.message, notification.type);
+            }
+            
+            async login(email, password) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        this.token = data.token;
+                        localStorage.setItem('token', this.token);
+                        this.currentUser = data.user;
+                        this.saveCurrentUser();
+                        return { success: true, user: data.user };
+                    } else {
+                        return { success: false, message: data.message };
+                    }
+                } catch (e) {
+                    return { success: false, message: 'Network error' };
+                }
+            }
+            
+            async register(userData) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        this.token = data.token;
+                        localStorage.setItem('token', this.token);
+                        this.currentUser = data.user;
+                        this.saveCurrentUser();
+                        return { success: true, user: data.user };
+                    } else {
+                        return { success: false, message: data.message };
+                    }
+                } catch (e) {
+                    return { success: false, message: 'Network error' };
+                }
+            }
+            
+            logout() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('sit_council_current_user');
+                this.token = null;
+                this.currentUser = null;
+                return { success: true };
+            }
+            
+            // Other methods like navigateTo, etc., remain similar but use fetch for data
+            async getDashboardStats() {
+                try {
+                    const res = await fetch(`${API_BASE}/api/dashboard/stats`, {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    return await res.json();
+                } catch (e) {
+                    console.error(e);
+                    return {};
+                }
+            }
+
+            // Similar for other data fetches (meetings, attendance, files, etc.)
+        }
+
+        // UIManager remains similar, but update load methods to use app.get* functions with fetch.
+
+        // Initialize
+        const app = new CouncilApp();
+        const ui = new UIManager(app);
+        window.councilApp = app;
+        window.uiManager = ui;
+
+        // Hide loading
+        setTimeout(() => ui.hideLoading(), 1000);
+    </script>
+</body>
+</html>
