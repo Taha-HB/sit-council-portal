@@ -2974,24 +2974,32 @@
                     }
                 });
             }
-            
             async loadCurrentUser() {
-                const savedUser = localStorage.getItem('sit_council_current_user');
-                if (savedUser) {
-                    this.currentUser = JSON.parse(savedUser);
-                }
-                if (this.token) {
-                    try {
-                        const res = await fetch(`${API_BASE}/api/users/me`, {
-                            headers: { 'Authorization': `Bearer ${this.token}` }
-                        });
-                        if (res.ok) this.currentUser = await res.json();
-                    } catch (e) {
-                        console.error('Error loading user', e);
-                    }
-                }
+    const savedUser = localStorage.getItem('sit_council_current_user');
+    if (savedUser) this.currentUser = JSON.parse(savedUser);
+
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const res = await fetch(`${API_BASE}/api/users/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                this.currentUser = await res.json();
+            } else {
+                // If error, clear bad token
+                localStorage.removeItem('token');
+                ui.showToast('Session expired. Please log in again.', 'warning');
             }
-            
+        } catch (e) {
+            console.error('Fetch error:', e);
+            ui.showToast('Network issue - trying again...', 'error');
+            // Retry after 10 sec
+            setTimeout(() => this.loadCurrentUser(), 10000);
+        }
+    }
+            }
+             
             saveCurrentUser() {
                 if (this.currentUser) {
                     localStorage.setItem('sit_council_current_user', JSON.stringify(this.currentUser));
