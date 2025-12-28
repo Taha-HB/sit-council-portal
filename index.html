@@ -3097,8 +3097,15 @@
         window.councilApp = app;
         window.uiManager = ui;
 
-        // Hide loading
-        setTimeout(() => ui.hideLoading(), 1000);
+        // Show a wake-up message for free tier
+document.querySelector('#loadingOverlay div.mt-2').textContent = 'Waking up server... (free hosting, may take 30-60 seconds)';
+
+setTimeout(() => {
+    ui.hideLoading();
+    if (!app.currentUser) {
+        ui.showToast('Server ready! Please log in.', 'info');
+    }
+}, 60000);  // Wait 30 seconds
     </script>
 </body>
 </html>
